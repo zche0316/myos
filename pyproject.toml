@@ -1,0 +1,20 @@
+[project]
+name = "myos"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "zche0316", email = "zche0316@uni.sydney.edu.au" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "openai>=3.5.0",
+    "python-dotenv>=1.2.3",
+]
+
+[project.scripts]
+myos = "myos:main"
+
+[build-system]
+requires = ["uv_build>=0.12.6,<0.13.0"]
+build-backend = "uv_build"
