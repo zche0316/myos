@@ -1,10 +1,12 @@
 import os
+import json
 
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
 from myos.llm.provider import LLMProvider
 from myos.llm.models import LLMResponse
+from myos.tools.models import ToolCall
 
 
 class GroqProvider(LLMProvider):
@@ -16,15 +18,41 @@ class GroqProvider(LLMProvider):
         )
         self.model = model
 
-    def generate(self, messages: list[ChatCompletionMessageParam]) -> LLMResponse:
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-        )
+    def generate(
+        self, 
+        messages: list[ChatCompletionMessageParam],
+        tools: list[dict] | None = None,
+    ) -> LLMResponse:
 
+
+        kwargs = {
+            "model": self.model,
+            "messages": messages,
+        }
+
+        if tools:
+            kwargs["tools"] = tools
+
+        response = self.client.chat.completions.create(**kwargs)   
+
+        message = response.choices[0].message
+
+        tool_calls = []
+
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                tool_calls.append(
+                    ToolCall(
+                        id=tool_call.id,
+                        name=tool_call.function.name,
+                        arguments=json.loads(tool_call.function.arguments),
+                    )
+                )
+            
         return LLMResponse(
-            response.choices[0].message.content or "",
+            content=message.content,
             model=response.model,
             input_tokens=response.usage.prompt_tokens if response.usage else 0,
             output_tokens=response.usage.completion_tokens if response.usage else 0,
+            tool_calls=tool_calls,
         )

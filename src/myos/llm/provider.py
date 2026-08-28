@@ -7,7 +7,11 @@ from myos.llm.models import LLMResponse
 class LLMProvider(ABC):
 
     @abstractmethod
-    def generate(self, messages: list[ChatCompletionMessageParam]) -> LLMResponse:
+    def generate(
+        self, 
+        messages: list[ChatCompletionMessageParam],
+        tools: list[dict] | None = None
+    ) -> LLMResponse:
         """Generate a response from the LLM"""
         pass
 
