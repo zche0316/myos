@@ -6,53 +6,65 @@ from myos.llm.groq import GroqProvider
 from myos.tools.calculator import calculate
 from myos.tools.models import Tool
 from myos.tools.registry import ToolRegistry
+from myos.agent.runtime import AgentRuntime
 
 load_dotenv()
 
-llm = GroqProvider(
-    model="openai/gpt-oss-120b",
-)
+def main():
 
-calculator_tool = Tool(
-    name="calculator",
-    description="Evaluate a mathematical expression.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "expression": {
-                "type": "string",
-                "description": "The mathematical expression to evaluate.",
-            }
+    llm = GroqProvider(
+        model="openai/gpt-oss-120b"
+    )
+
+
+    calculator_tool = Tool(
+        name="calculator",
+        description=(
+            "Evaluates a mathematical expression."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "expression": {
+                    "type": "string",
+                    "description": "The mathematical expression to evaluate.",
+                },
+            },
+            "required": ["expression"],
         },
-        "required": ["expression"],
-    },
-    function=calculate,
-)
+        function=calculate,
+    )
 
-registry = ToolRegistry()
-registry.register(calculator_tool)
 
-messages = [
-    {
-        "role": "user",
-        "content": "What is 12345 + 6789?",
-    }
-]
+    registry = ToolRegistry()
 
-while True:
-    response = llm.generate(messages=messages, tools=registry.schemas())
-    print(f"Response: {response.content}")
-    print(f"Tool Calls: {response.tool_calls}")
+    registry.register(
+        calculator_tool
+    )
 
-    if response.tool_calls:
-        for tool_call in response.tool_calls:
-            tool = registry.get(tool_call.name)
-            result = tool.function(**tool_call.arguments)
-            messages.append({
-                "role": "assistant",
-                "content": f"Tool '{tool_call.name}' called with arguments {tool_call.arguments}. Result: {result}",
-            })
-            print(f"Tool '{tool_call.name}' called with arguments {tool_call.arguments}. Result: {result}")
-            
-    else:
-        break
+
+    agent = AgentRuntime(
+        llm=llm,
+        registry=registry,
+    )
+
+
+    answer = agent.run(
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    "What is hello + world?"
+                ),
+            }
+        ]
+    )
+
+
+    print()
+    print("Final answer:")
+    print(answer)
+
+
+if __name__ == "__main__":
+    main()

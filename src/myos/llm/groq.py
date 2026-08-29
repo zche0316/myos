@@ -55,4 +55,7 @@ class GroqProvider(LLMProvider):
             input_tokens=response.usage.prompt_tokens if response.usage else 0,
             output_tokens=response.usage.completion_tokens if response.usage else 0,
             tool_calls=tool_calls,
+            message=message.model_dump(
+                exclude_none=True
+            ),
         )
