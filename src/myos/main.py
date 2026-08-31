@@ -7,6 +7,7 @@ from myos.tools.calculator import calculate
 from myos.tools.models import Tool
 from myos.tools.registry import ToolRegistry
 from myos.agent.runtime import AgentRuntime
+from myos.messages.models import UserMessage, SystemMessage, AssistantMessage, ToolMessage
 
 load_dotenv()
 
@@ -51,12 +52,9 @@ def main():
 
     answer = agent.run(
         messages=[
-            {
-                "role": "user",
-                "content": (
-                    "What is hello + world?"
-                ),
-            }
+            UserMessage(
+                content="What is 123454 * 567890?"
+            )
         ]
     )
 

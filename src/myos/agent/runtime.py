@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, Dict, List
 
 from myos.llm.provider import LLMProvider
 from myos.tools.registry import ToolRegistry
+from myos.messages.models import Message, ToolMessage
 
 
 class AgentRuntime:
@@ -18,7 +19,7 @@ class AgentRuntime:
 
     def run(
         self,
-        messages: list[dict[str, Any]],
+        messages: list[Message],
     ) -> str:
 
         for _ in range(self.max_iterations):
@@ -38,40 +39,47 @@ class AgentRuntime:
                 f"{response.tool_calls}"
             )
 
-            # 1. 没有 Tool Call
+            # 1. LLM 给出了最终答案
             if not response.tool_calls:
                 return response.content or ""
 
-            # 2. 先加入 Assistant Tool Call Message
+            # 2. 保存 Assitant 的 Tool Call
             messages.append(
                 response.message
             )
 
-            # 3. 执行所有 Tool Calls
+            # 3. 执行 Tool Calls
             for tool_call in response.tool_calls:
 
                 tool = self.registry.get(
                     tool_call.name
                 )
 
+                if not tool:
+                    raise RuntimeError(
+                        f"Tool not found: {tool_call.name}"
+                    )
+
                 result = tool.function(
                     **tool_call.arguments
                 )
 
-                # 4. 加入真正的 Tool Message
-                messages.append(
-                    {
-                        "role": "tool",
-                        "content": str(result),
-                        "tool_call_id": tool_call.id
-                    }
+                print(
+                    f"[Runtime] Tool: "
+                    f"{tool_call.name} returned: {result}"
                 )
 
-                print(
-                    f"[Runtime] Tool "
-                    f"{tool_call.name} "
-                    f"returned: {result}"
+                # 4. 保存 Tool Result
+                messages.append(
+                    ToolMessage(
+                        content=result,
+                        tool_call_id=tool_call.id,
+                    )
                 )
+
+                print("[Runtime] Messages:")
+                for message in messages:
+                    print(message)
 
         raise RuntimeError(
             "Maximum agent iterations reached."

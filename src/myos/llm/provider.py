@@ -1,16 +1,16 @@
 from abc import ABC, abstractmethod
 
-from openai.types.chat import ChatCompletionMessageParam
 
 from myos.llm.models import LLMResponse
+from myos.messages.models import Message
 
 class LLMProvider(ABC):
 
     @abstractmethod
     def generate(
         self, 
-        messages: list[ChatCompletionMessageParam],
-        tools: list[dict] | None = None
+        messages: list[Message],
+        tools=None
     ) -> LLMResponse:
         """Generate a response from the LLM"""
         pass

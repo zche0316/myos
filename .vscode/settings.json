@@ -1,0 +1,7 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.analysis.typeCheckingMode": "basic",
+    "cursorpyright.analysis.typeCheckingMode": "basic",
+    "python.analysis.extraPaths": ["src"],
+    "cursorpyright.analysis.extraPaths": ["src"]
+}

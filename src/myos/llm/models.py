@@ -1,8 +1,7 @@
 from typing import Any
 from dataclasses import dataclass, field
 
-from myos.tools.models import ToolCall
-
+from myos.messages.models import ToolCall, AssistantMessage
 
 @dataclass
 class LLMResponse:
@@ -10,6 +9,6 @@ class LLMResponse:
     model: str
     input_tokens: int
     output_tokens: int
-    message: dict[str, Any]
+    message: AssistantMessage
     tool_calls: list[ToolCall] = field(default_factory=list)
 

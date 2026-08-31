@@ -3,13 +3,6 @@ from typing import Any, Callable
 
 
 @dataclass
-class ToolCall:
-    id: str
-    name: str
-    arguments: dict[str, Any]
-
-
-@dataclass
 class Tool:
     name: str
     description: str
