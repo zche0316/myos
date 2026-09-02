@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 from myos.llm.groq import GroqProvider
 from myos.tools.calculator import calculate
+from myos.tools.failing import failing_tool
 from myos.tools.models import Tool
 from myos.tools.registry import ToolRegistry
 from myos.agent.runtime import AgentRuntime
@@ -17,6 +18,23 @@ def main():
         model="openai/gpt-oss-120b"
     )
 
+    failing_tool_instance = Tool(
+        name="failing_tool",
+        description=(
+            "A tool that always fails."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "value": {
+                    "type": "string",
+                    "description": "The value to fail with.",
+                },
+            },
+            "required": ["value"],
+        },
+        function=failing_tool,
+    )
 
     calculator_tool = Tool(
         name="calculator",
@@ -42,7 +60,9 @@ def main():
     registry.register(
         calculator_tool
     )
-
+    registry.register(
+        failing_tool_instance
+    )
 
     agent = AgentRuntime(
         llm=llm,
@@ -53,7 +73,7 @@ def main():
     answer = agent.run(
         messages=[
             UserMessage(
-                content="What is 123454 * 567890?"
+                content="Use the failing_tool with value hello."
             )
         ]
     )

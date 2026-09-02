@@ -18,3 +18,9 @@ class Tool:
                 "parameters": self.parameters,
             },
         }
+    
+
+@dataclass
+class ToolResult:
+    success: bool
+    content: str

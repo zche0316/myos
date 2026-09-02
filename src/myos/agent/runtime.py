@@ -1,6 +1,5 @@
-from typing import Any, Dict, List
-
 from myos.llm.provider import LLMProvider
+from myos.tools.models import ToolResult
 from myos.tools.registry import ToolRegistry
 from myos.messages.models import Message, ToolMessage
 
@@ -17,6 +16,40 @@ class AgentRuntime:
         self.registry = registry
         self.max_iterations = max_iterations
 
+
+    def _execute_tool(
+        self,
+        tool_name: str,
+        arguments: dict,
+    ) -> ToolResult:
+
+        tool = self.registry.get(tool_name)
+
+        if not tool:
+            return ToolResult(
+                success=False,
+                content=(
+                    f"Tool {tool_name}"
+                    f"is not registered."
+                )
+        )
+
+        try:
+            result = tool.function(**arguments)
+            return ToolResult(
+                success=True,
+                content=result,
+            )
+        except Exception as e:
+            return ToolResult(
+                success=False,
+                content=(
+                    f"Tool execution failed:"
+                    f"{type(e).__name__}: {e}"
+                ),
+            )
+
+        
     def run(
         self,
         messages: list[Message],
@@ -51,28 +84,26 @@ class AgentRuntime:
             # 3. 执行 Tool Calls
             for tool_call in response.tool_calls:
 
-                tool = self.registry.get(
-                    tool_call.name
-                )
-
-                if not tool:
-                    raise RuntimeError(
-                        f"Tool not found: {tool_call.name}"
-                    )
-
-                result = tool.function(
-                    **tool_call.arguments
+                tool_result = self._execute_tool(
+                    tool_name=tool_call.name,
+                    arguments=tool_call.arguments,
                 )
 
                 print(
                     f"[Runtime] Tool: "
-                    f"{tool_call.name} returned: {result}"
+                    f"{tool_call.name} "
+                    f"success: {tool_result.success} "
+                )
+
+                print(
+                    f"[Runtime] Tool Result: "
+                    f"{tool_result.content}"
                 )
 
                 # 4. 保存 Tool Result
                 messages.append(
                     ToolMessage(
-                        content=result,
+                        content=tool_result.content,
                         tool_call_id=tool_call.id,
                     )
                 )
