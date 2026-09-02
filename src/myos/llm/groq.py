@@ -145,8 +145,10 @@ class GroqProvider(LLMProvider):
         response = self.client.chat.completions.create(**kwargs)   
 
         # 4. API Message → MyOS AssistantMessage
+        api_message = response.choices[0].message
+
         assistant_message = self._from_api_message(
-            response.choices[0].message
+            api_message
         )
 
        # 5. Wrap into MyOS LLMResponse

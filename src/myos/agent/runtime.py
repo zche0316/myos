@@ -1,6 +1,7 @@
 from myos.llm.provider import LLMProvider
 from myos.tools.models import ToolResult
 from myos.tools.registry import ToolRegistry
+from myos.agent.session import AgentSession
 from myos.messages.models import Message, ToolMessage
 
 
@@ -52,8 +53,10 @@ class AgentRuntime:
         
     def run(
         self,
-        messages: list[Message],
+        session: AgentSession,
     ) -> str:
+
+        messages = session.messages
 
         for _ in range(self.max_iterations):
 
@@ -74,6 +77,11 @@ class AgentRuntime:
 
             # 1. LLM 给出了最终答案
             if not response.tool_calls:
+
+                messages.append(
+                    response.message
+                )
+                
                 return response.content or ""
 
             # 2. 保存 Assitant 的 Tool Call

@@ -1,88 +1,95 @@
-import os
-
-from dotenv import load_dotenv
+from myos.agent.runtime import AgentRuntime
+from myos.agent.session import AgentSession
 
 from myos.llm.groq import GroqProvider
-from myos.tools.calculator import calculate
-from myos.tools.failing import failing_tool
 from myos.tools.models import Tool
 from myos.tools.registry import ToolRegistry
-from myos.agent.runtime import AgentRuntime
-from myos.messages.models import UserMessage, SystemMessage, AssistantMessage, ToolMessage
+from myos.tools.calculator import CalculatorTool
+from myos.messages.models import UserMessage
+import os
+from dotenv import load_dotenv
 
 load_dotenv()
 
-def main():
 
-    llm = GroqProvider(
-        model="openai/gpt-oss-120b"
-    )
 
-    failing_tool_instance = Tool(
-        name="failing_tool",
-        description=(
-            "A tool that always fails."
-        ),
-        parameters={
-            "type": "object",
-            "properties": {
-                "value": {
-                    "type": "string",
-                    "description": "The value to fail with.",
-                },
+llm = GroqProvider(
+    model="openai/gpt-oss-120b",
+)
+
+tool_registry = ToolRegistry()
+
+
+calculator_tool = Tool(
+    name="calculator",
+    description="A tool for performing calculations.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "expression": {
+                "type": "string",
+                "description": "The mathematical expression to evaluate.",
             },
-            "required": ["value"],
         },
-        function=failing_tool,
+        "required": ["expression"],
+    },
+    function=CalculatorTool().call,
+)
+
+tool_registry.register(calculator_tool)
+    
+runtime = AgentRuntime(
+    llm=llm,
+    registry=tool_registry,
+    max_iterations=10,
+)
+
+
+session = AgentSession()
+
+session.messages.append(
+    UserMessage(
+        content="My name is Chen.",
     )
+)
 
-    calculator_tool = Tool(
-        name="calculator",
-        description=(
-            "Evaluates a mathematical expression."
-        ),
-        parameters={
-            "type": "object",
-            "properties": {
-                "expression": {
-                    "type": "string",
-                    "description": "The mathematical expression to evaluate.",
-                },
-            },
-            "required": ["expression"],
-        },
-        function=calculate,
+answer = runtime.run(session)
+
+print("\nRound 1: ")
+print(answer)
+
+session.messages.append(
+    UserMessage(
+        content="What is my name?",
     )
+)
 
+answer = runtime.run(session)
+print("\nRound 2: ")
+print(answer)
 
-    registry = ToolRegistry()
-
-    registry.register(
-        calculator_tool
+session.messages.append(
+    UserMessage(
+        content="What did I tell you at the beginning?",
     )
-    registry.register(
-        failing_tool_instance
+)
+
+answer = runtime.run(session)
+print("\nRound 3: ")
+print(answer)
+
+session.messages.append(
+    UserMessage(
+        content="What did I you answer me in the previous round?",
     )
+)
 
-    agent = AgentRuntime(
-        llm=llm,
-        registry=registry,
-    )
-
-
-    answer = agent.run(
-        messages=[
-            UserMessage(
-                content="Use the failing_tool with value hello."
-            )
-        ]
-    )
+answer = runtime.run(session)
+print("\nRound 4: ")
+print(answer)
 
 
-    print()
-    print("Final answer:")
-    print(answer)
+print("\nFinal session history: ")
 
-
-if __name__ == "__main__":
-    main()
+for i, message in enumerate(session.messages):
+    print(i, message)
